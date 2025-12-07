@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const admin = require('firebase-admin');
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 3000;
 
 // 🌳stripe code
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
@@ -105,40 +105,35 @@ async function run() {
     });
 
     // 🌳 Payment endpoints
-    app.post(
-      '/create-checkout-session',
-      verifyJWT,
-      verifySELLER,
-      async (req, res) => {
-        const paymentInfo = req.body;
-        const session = await stripe.checkout.sessions.create({
-          line_items: [
-            {
-              price_data: {
-                currency: 'usd',
-                product_data: {
-                  name: paymentInfo?.name,
-                  description: paymentInfo?.description,
-                  images: [paymentInfo?.image],
-                },
-                unit_amount: paymentInfo?.price * 100,
+    app.post('/create-checkout-session', verifyJWT, async (req, res) => {
+      const paymentInfo = req.body;
+      const session = await stripe.checkout.sessions.create({
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: paymentInfo?.name,
+                description: paymentInfo?.description,
+                images: [paymentInfo?.image],
               },
-              quantity: paymentInfo?.quantity,
+              unit_amount: paymentInfo?.price * 100,
             },
-          ],
-          customer_email: paymentInfo?.customer?.email,
-          mode: 'payment',
-          metadata: {
-            plantId: paymentInfo?.plantId,
-            customer: paymentInfo?.customer.email,
+            quantity: paymentInfo?.quantity,
           },
-          success_url: `${process.env.CLIENT_DOMAIN}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${process.env.CLIENT_DOMAIN}/plant/${paymentInfo?.plantId}`,
-        });
-        // console.log(paymentInfo);
-        res.send({ url: session.url });
-      }
-    );
+        ],
+        customer_email: paymentInfo?.customer?.email,
+        mode: 'payment',
+        metadata: {
+          plantId: paymentInfo?.plantId,
+          customer: paymentInfo?.customer.email,
+        },
+        success_url: `${process.env.CLIENT_DOMAIN}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.CLIENT_DOMAIN}/plant/${paymentInfo?.plantId}`,
+      });
+      // console.log(paymentInfo);
+      res.send({ url: session.url });
+    });
 
     // 🌳 Payment -- success page api
     app.post('/payment-success', async (req, res) => {

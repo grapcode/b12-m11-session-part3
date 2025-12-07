@@ -1,9 +1,11 @@
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import useAuth from '../../hooks/useAuth';
-import axios from 'axios';
+
+import useAxiosSecure from '../../hooks/useAxiosSecure';
 
 const PurchaseModal = ({ closeModal, isOpen, plant }) => {
   const { user } = useAuth();
+  const axiosSecure = useAxiosSecure();
   // console.log(plant);
   // Total Price Calculation
   const { _id, name, category, price, quantity, description, image, seller } =
@@ -26,8 +28,8 @@ const PurchaseModal = ({ closeModal, isOpen, plant }) => {
       },
     };
 
-    const { data } = await axios.post(
-      `${import.meta.env.VITE_API_URL}/create-checkout-session`,
+    const { data } = await axiosSecure.post(
+      `/create-checkout-session`,
       paymentInfo
     );
 
